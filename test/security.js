@@ -5,6 +5,7 @@ var Hapi = require('./helpers/hapi');
 var Hoek = require('hoek');
 var Inert = require('..');
 var Lab = require('lab');
+var Path = require('path');
 
 
 // Declare internals
@@ -98,6 +99,71 @@ describe('security', function () {
         server.inject('/index%00.html', function (res) {
 
             expect(res.statusCode).to.equal(404);
+            done();
+        });
+    });
+
+    it('blocks access to files outside of base directory for file handler', function (done) {
+
+        var server = provisionServer();
+
+        var secureHandler = { file: { confine: './directory', path: Path.join(__dirname, 'security.js') } };
+        server.route({ method: 'GET', path: '/secure', handler: secureHandler });
+        server.route({ method: 'GET', path: '/open', handler: Hoek.applyToDefaults(secureHandler, { file: { confine: false } }) });
+
+        server.inject('/secure', function (res1) {
+
+            expect(res1.statusCode).to.equal(403);
+            server.inject('/open', function (res2) {
+
+                expect(res2.statusCode).to.equal(200);
+                done();
+            });
+        });
+    });
+
+    it('blocks path traversal to files outside of base directory for file handler', function (done) {
+
+        var server = provisionServer();
+        server.route({ method: 'GET', path: '/file', handler: { file: { confine: './directory', path: '../security.js' } } });
+
+        server.inject('/file', function (res) {
+
+            expect(res.statusCode).to.equal(403);
+            done();
+        });
+    });
+
+    it('blocks access to files outside of base directory for reply.file()', function (done) {
+
+        var server = provisionServer();
+        var fileHandler = function (request, reply) {
+
+            reply.file(Path.join(__dirname, 'security.js'), { confine: Path.join(__dirname, 'directory') });
+        };
+
+        server.route({ method: 'GET', path: '/file', handler: fileHandler });
+
+        server.inject('/file', function (res) {
+
+            expect(res.statusCode).to.equal(403);
+            done();
+        });
+    });
+
+    it('blocks path traversal to files outside of base directory for reply.file()', function (done) {
+
+        var server = provisionServer();
+        var fileHandler = function (request, reply) {
+
+            reply.file('../security.js', { confine: Path.join(__dirname, 'directory') });
+        };
+
+        server.route({ method: 'GET', path: '/file', handler: fileHandler });
+
+        server.inject('/file', function (res) {
+
+            expect(res.statusCode).to.equal(403);
             done();
         });
     });

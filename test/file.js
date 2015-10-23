@@ -43,7 +43,7 @@ describe('file', function () {
             var server = provisionServer({ routes: { files: { relativeTo: __dirname } } });
             var handler = function (request, reply) {
 
-                reply.file('../package.json').code(499);
+                reply.file('package.json', { confine: '../' }).code(499);
             };
 
             server.route({ method: 'GET', path: '/file', handler: handler });
@@ -64,7 +64,7 @@ describe('file', function () {
             var server = provisionServer();
             var handler = function (request, reply) {
 
-                reply.file('../package.json');
+                reply.file('../package.json', { confine: false });
             };
 
             server.route({ method: 'GET', path: '/file', handler: handler, config: { files: { relativeTo: __dirname } } });
@@ -178,7 +178,7 @@ describe('file', function () {
             var server = provisionServer({ routes: { files: { relativeTo: __dirname } } });
             var handler = function (request, reply) {
 
-                reply.file(Path.join(__dirname, '..', 'package.json'), { mode: 'attachment' });
+                reply.file(Path.join(__dirname, '..', 'package.json'), { confine: '..', mode: 'attachment' });
             };
 
             server.route({ method: 'GET', path: '/file', handler: handler });
@@ -199,7 +199,7 @@ describe('file', function () {
             var server = provisionServer({ routes: { files: { relativeTo: __dirname } } });
             var handler = function (request, reply) {
 
-                reply.file(Path.join(__dirname, '..', 'package.json'), { mode: 'attachment', filename: 'attachment.json' });
+                reply.file(Path.join(__dirname, '..', 'package.json'), { confine: '..', mode: 'attachment', filename: 'attachment.json' });
             };
 
             server.route({ method: 'GET', path: '/file', handler: handler });
@@ -220,7 +220,7 @@ describe('file', function () {
             var server = provisionServer({ routes: { files: { relativeTo: __dirname } } });
             var handler = function (request, reply) {
 
-                reply.file(Path.join(__dirname, '..', 'package.json'), { mode: 'inline' });
+                reply.file(Path.join(__dirname, '..', 'package.json'), { confine: '..', mode: 'inline' });
             };
 
             server.route({ method: 'GET', path: '/file', handler: handler });
@@ -241,7 +241,7 @@ describe('file', function () {
             var server = provisionServer({ routes: { files: { relativeTo: __dirname } } });
             var handler = function (request, reply) {
 
-                reply.file(Path.join(__dirname, '..', 'package.json'), { mode: 'inline', filename: 'attachment.json' });
+                reply.file(Path.join(__dirname, '..', 'package.json'), { confine: '..', mode: 'inline', filename: 'attachment.json' });
             };
 
             server.route({ method: 'GET', path: '/file', handler: handler });
@@ -285,7 +285,7 @@ describe('file', function () {
 
         it('returns a file using the built-in handler config', function (done) {
 
-            var server = provisionServer({ routes: { files: { relativeTo: __dirname } } });
+            var server = provisionServer({ routes: { files: { relativeTo: Path.join(__dirname, '..') } } });
             server.route({ method: 'GET', path: '/staticfile', handler: { file: Path.join(__dirname, '..', 'package.json') } });
 
             server.inject('/staticfile', function (res) {
@@ -302,10 +302,10 @@ describe('file', function () {
 
             var filenameFn = function (request) {
 
-                return '../lib/' + request.params.file;
+                return './lib/' + request.params.file;
             };
 
-            var server = provisionServer({ routes: { files: { relativeTo: __dirname } } });
+            var server = provisionServer({ routes: { files: { relativeTo: Path.join(__dirname, '..') } } });
             server.route({ method: 'GET', path: '/filefn/{file}', handler: { file: filenameFn } });
 
             server.inject('/filefn/index.js', function (res) {
@@ -323,7 +323,7 @@ describe('file', function () {
             var server = provisionServer({ routes: { files: { relativeTo: '.' } } });
             var relativeHandler = function (request, reply) {
 
-                reply.file('./package.json');
+                reply.file('./package.json', { confine: true });
             };
 
             server.route({ method: 'GET', path: '/relativefile', handler: relativeHandler });
@@ -340,8 +340,8 @@ describe('file', function () {
 
         it('returns a file using the built-in handler config (relative path)', function (done) {
 
-            var server = provisionServer({ routes: { files: { relativeTo: __dirname } } });
-            server.route({ method: 'GET', path: '/relativestaticfile', handler: { file: '../package.json' } });
+            var server = provisionServer({ routes: { files: { relativeTo: Path.join(__dirname, '..') } } });
+            server.route({ method: 'GET', path: '/relativestaticfile', handler: { file: './package.json' } });
 
             server.inject('/relativestaticfile', function (res) {
 
@@ -371,7 +371,7 @@ describe('file', function () {
             var server = provisionServer({ routes: { files: { relativeTo: __dirname } } });
             var handler = function (request, reply) {
 
-                reply.file('../LICENSE').type('application/example');
+                reply.file('../LICENSE', { confine: false }).type('application/example');
             };
 
             server.route({ method: 'GET', path: '/file', handler: handler });
@@ -868,7 +868,7 @@ describe('file', function () {
             var server = provisionServer({ routes: { files: { relativeTo: __dirname } } });
             var handler = function (request, reply) {
 
-                reply.file(Path.join(__dirname, '..', 'package.json'));
+                reply.file(Path.join(__dirname, '..', 'package.json'), { confine: '..' });
             };
 
             server.route({ method: 'GET', path: '/file', handler: handler });
@@ -910,7 +910,7 @@ describe('file', function () {
             var server = provisionServer({ routes: { files: { relativeTo: __dirname } } });
             var handler = function (request, reply) {
 
-                reply.file(Path.join(__dirname, '..', 'package.json'));
+                reply.file(Path.join(__dirname, '..', 'package.json'), { confine: '..' });
             };
 
             server.route({ method: 'GET', path: '/file', handler: handler });
@@ -1023,7 +1023,7 @@ describe('file', function () {
             Fs.writeFileSync(filename, 'data');
 
             var server = provisionServer();
-            server.route({ method: 'GET', path: '/', handler: { file: filename } });
+            server.route({ method: 'GET', path: '/', handler: { file: { path: filename, confine: false } } });
             server.ext('onPreResponse', function (request, reply) {
 
                 Fs.unlinkSync(filename);
@@ -1043,7 +1043,7 @@ describe('file', function () {
             Fs.writeFileSync(filename, 'data');
 
             var server = provisionServer();
-            server.route({ method: 'GET', path: '/', handler: { file: filename } });
+            server.route({ method: 'GET', path: '/', handler: { file: { path: filename, confine: false } } });
             server.ext('onPreResponse', function (request, reply) {
 
                 var tempfile = filename + '~';
@@ -1130,7 +1130,7 @@ describe('file', function () {
 
 
             var server = provisionServer();
-            server.route({ method: 'GET', path: '/', handler: { file: filename } });
+            server.route({ method: 'GET', path: '/', handler: { file: { path: filename, confine: false } } });
 
             server.inject('/', function (res) {
 
@@ -1153,7 +1153,7 @@ describe('file', function () {
             };
 
             var server = provisionServer();
-            server.route({ method: 'GET', path: '/', handler: { file: filename } });
+            server.route({ method: 'GET', path: '/', handler: { file: { path: filename, confine: false } } });
 
             server.inject('/', function (res) {
 
