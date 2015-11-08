@@ -38,7 +38,7 @@ describe('security', function () {
 
         server.inject('/%00/../security.js', function (res) {
 
-            expect(res.statusCode).to.equal(403);
+            expect(res.statusCode).to.equal(404);
             done();
         });
     });
@@ -74,7 +74,7 @@ describe('security', function () {
 
         server.inject('/..%252Fsecurity.js', function (res) {
 
-            expect(res.statusCode).to.equal(403);
+            expect(res.statusCode).to.equal(404);
             done();
         });
     });
@@ -86,7 +86,7 @@ describe('security', function () {
 
         server.inject('/..\u2216security.js', function (res) {
 
-            expect(res.statusCode).to.equal(403);
+            expect(res.statusCode).to.equal(404);
             done();
         });
     });
